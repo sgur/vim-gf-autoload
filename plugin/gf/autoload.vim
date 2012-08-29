@@ -1,5 +1,5 @@
 "=============================================================================
-" FILE: autoload/gf/function.vim
+" FILE: plugin/gf/autoload.vim
 " AUTHOR: sgur <sgurrr+vim@gmail.com>
 " License: MIT license  {{{
 "     Permission is hereby granted, free of charge, to any person obtaining
@@ -23,46 +23,12 @@
 " }}}
 "=============================================================================
 
-let s:save_cpo = &cpo
-set cpo&vim
+if exists('g:loaded_gf_autoload')
+  " finish
+endif
 
 
-function! gf#function#find()
-  let line = getline('.')
-  let start = s:find_start(line, col('.'))
-  let match = matchstr(line[start :], '\k\+\ze#')
-  let fname = expand(
-        \ 'autoload/'
-        \ . substitute(match, '#', '/', 'g')
-        \ . '.vim')
-  let path = globpath(&rtp, fname)
-  return !empty(path) ? {
-        \ 'path' : path,
-        \ 'line' : s:search_line(path, matchstr(line[start :], '\k\+')),
-        \ 'col'  : start,
-        \ }
-        \ : 0
-endfunction
+call gf#user#extend('gf#autoload#find', 1000)
 
 
-function! s:find_start(line, cursor_index)
-  for i in range(a:cursor_index, 0, -1)
-    if a:line[i] !~ '\k'
-      return i+1
-    endif
-  endfor
-  return 0
-endfunction
-
-
-function! s:search_line(path, term)
-  let line = match(readfile(a:path), '\%(fu\|function\)!\?\s*'.a:term)
-  if line >= 0
-    return line+1
-  endif
-  return 0
-endfunction
-
-
-let &cpo = s:save_cpo
-unlet s:save_cpo
+let g:loaded_gf_autoload = 1
