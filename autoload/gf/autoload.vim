@@ -35,7 +35,7 @@ function! gf#autoload#find()
         \ 'autoload/'
         \ . substitute(match, '#', '/', 'g')
         \ . '.vim')
-  let path = globpath(&rtp, fname)
+  let path = split(globpath(&rtp, fname), '\r\n\|\n\|\r')[0]
   return !empty(path) ? {
         \ 'path' : path,
         \ 'line' : s:search_line(path, matchstr(line[start :], '\k\+')),
