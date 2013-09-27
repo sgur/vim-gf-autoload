@@ -63,7 +63,7 @@ endfunction
 
 
 function! s:search_line(path, term)
-  let line = match(readfile(a:path), '\s*\%(fu\|function\)!\?\s*'.a:term)
+  let line = match(readfile(a:path), '\s*fu\%[nction]!\?\s*'.a:term)
   if line >= 0
     return line+1
   endif
