@@ -28,21 +28,27 @@ set cpo&vim
 
 
 function! gf#autoload#find()
-  let line = getline('.')
-  let start = s:find_start(line, col('.'))
-  let match = matchstr(line[start :], '\k\+\ze#')
-  let fname = expand(
-        \ 'autoload/'
-        \ . substitute(match, '#', '/', 'g')
-        \ . '.vim')
-  let paths = split(globpath(&rtp, fname), '\r\n\|\n\|\r')
-  let path = len(paths) > 0 ? paths[0] : ''
-  return !empty(path) ? {
-        \ 'path' : path,
-        \ 'line' : s:search_line(path, matchstr(line[start :], '\k\+')),
-        \ 'col'  : start,
-        \ }
-        \ : 0
+  let isk = &iskeyword
+  set iskeyword +=:
+  try
+    let line = getline('.')
+    let start = s:find_start(line, col('.'))
+    let path = stridx(line[start :], 's:')
+          \ ? s:autoload_path(line[start : ]) : expand('%')
+    return empty(path) ? 0 :
+          \ { 'line' : s:search_line(path, matchstr(line[start :], '\k\+'))
+          \ , 'path' : path, 'col' : start}
+  finally
+    let &iskeyword = isk
+  endtry
+endfunction
+
+
+function! s:autoload_path(function_name)
+  let match = matchstr(a:function_name, '\k\+\ze#')
+  let fname = expand('autoload/' . substitute(match, '#', '/', 'g') . '.vim')
+  let paths = split(globpath(&runtimepath, fname), '\r\n\|\n\|\r')
+  return len(paths) > 0 ? paths[0] : ''
 endfunction
 
 
@@ -57,7 +63,7 @@ endfunction
 
 
 function! s:search_line(path, term)
-  let line = match(readfile(a:path), '\%(fu\|function\)!\?\s*'.a:term)
+  let line = match(readfile(a:path), '\s*\%(fu\|function\)!\?\s*'.a:term)
   if line >= 0
     return line+1
   endif
