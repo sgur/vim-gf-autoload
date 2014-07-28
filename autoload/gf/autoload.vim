@@ -29,12 +29,16 @@ set cpo&vim
 
 function! gf#autoload#find()
   let isk = &iskeyword
-  set iskeyword +=:
+  set iskeyword +=:,<,>
   try
     let line = getline('.')
     let start = s:find_start(line, col('.'))
-    let path = stridx(line[start :], 's:')
-          \ ? s:autoload_path(line[start : ]) : expand('%')
+    if line[start :] =~? '\%(s:\|<SNR>\|<SID>\)'
+      let line = substitute(line, '<\%(SNR\|SID\)>', 's:', '')
+      let path = expand('%')
+    else
+      let path = s:autoload_path(line[start : ])
+    endif
     return empty(path) ? 0 :
           \ { 'line' : s:search_line(path, matchstr(line[start :], '\k\+'))
           \ , 'path' : path, 'col' : start}
