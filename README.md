@@ -17,7 +17,7 @@ definition is also provided.
 Uasge
 -----
 
-Type `gf` on `foo#bar()` or `s:foo()` function.
+Type `gf` on `foo#bar()` or `s:foo()` (`<SID>foo()`) function.
 
 Requirements
 ------------
