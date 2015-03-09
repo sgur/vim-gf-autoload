@@ -28,6 +28,9 @@ set cpo&vim
 
 
 function! gf#autoload#find()
+  if &filetype isnot# 'vim'
+    return 0
+  endif
   let isk = &iskeyword
   set iskeyword +=:,<,>,#
   try
