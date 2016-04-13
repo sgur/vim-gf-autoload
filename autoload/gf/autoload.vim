@@ -27,12 +27,12 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 
-function! gf#autoload#find()
+function! gf#autoload#find() abort
   if &filetype isnot# 'vim'
     return 0
   endif
-  let isk = &iskeyword
-  set iskeyword +=:,<,>,#
+  let isk = &l:iskeyword
+  setlocal iskeyword+=:,<,>,#
   try
     let line = getline('.')
     let start = s:find_start(line, col('.'))
@@ -40,42 +40,59 @@ function! gf#autoload#find()
       let line = substitute(line, '<\%(SNR\|SID\)>', 's:', '')
       let path = expand('%')
     else
-      let path = s:autoload_path(line[start : ])
+      for base_dir in (exists('b:autoload_gf_basedir') ? [b:autoload_gf_basedir] : [])
+            \ + [getcwd()] + split(finddir('autoload', expand('%:p:h') . ';')) + [&runtimepath]
+        let path = s:autoload_path(base_dir, line[start : ])
+        if !empty(path)
+          break
+        endif
+      endfor
     endif
     return empty(path) ? 0 :
           \ { 'line' : s:search_line(path, matchstr(line[start :], '\k\+'))
           \ , 'path' : path, 'col' : start}
   finally
-    let &iskeyword = isk
+    let &l:iskeyword = isk
   endtry
 endfunction
 
 
-function! s:autoload_path(function_name)
+if has('patch-7.4.279')
+  function! s:globpath(path, expr) abort "{{{
+    return globpath(a:path, a:expr, 1, 1)
+  endfunction "}}}
+else
+  function! s:globpath(path, expr) abort "{{{
+    return split(globpath(a:path, a:expr), '\n')
+  endfunction "}}}
+endif
+
+
+function! s:autoload_path(base_dir, function_name) abort "{{{
   let match = matchstr(a:function_name, '\k\+\ze#')
   let fname = expand('autoload/' . substitute(match, '#', '/', 'g') . '.vim')
-  let paths = split(globpath(&runtimepath, fname), '\r\n\|\n\|\r')
+  let paths = s:globpath(a:base_dir, fname)
   return len(paths) > 0 ? paths[0] : ''
-endfunction
+endfunction "}}}
 
 
-function! s:find_start(line, cursor_index)
+function! s:find_start(line, cursor_index) abort "{{{
   for i in range(a:cursor_index, 0, -1)
     if a:line[i] !~ '\k'
       return i+1
     endif
   endfor
   return 0
-endfunction
+endfunction "}}}
 
 
-function! s:search_line(path, term)
+function! s:search_line(path, term) abort "{{{
   let line = match(readfile(a:path), '\s*fu\%[nction]!\?\s*' . a:term . '\>')
   if line >= 0
     return line+1
   endif
   return 0
-endfunction
+endfunction "}}}
 
 
 let &cpo = s:save_cpo
